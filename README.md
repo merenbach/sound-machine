@@ -36,3 +36,8 @@ or
 For more information about using Go on Heroku, see these Dev Center articles:
 
 - [Go on Heroku](https://devcenter.heroku.com/categories/go)
+
+
+## Acknowledgments
+
+I'm greatly indebted to the [Gorilla Websocket Toolkit](https://github.com/gorilla/websocket/tree/master/examples/chat), portions of which have been adapted here for use with Server-Sent Events.
