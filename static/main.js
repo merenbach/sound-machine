@@ -101,11 +101,12 @@
             const source = newEventSource("/listen");
             source.addEventListener("message", function (e) {
                 console.log("RECV:", e.data);
-                play(e.data);
 
                 var newElement = document.createElement("li");
                 newElement.textContent = e.data;
                 playlistElement.appendChild(newElement);
+
+                play(e.data);
             });
 
             /*source.onmessage = function(e) {
