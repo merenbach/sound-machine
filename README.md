@@ -40,4 +40,4 @@ For more information about using Go on Heroku, see these Dev Center articles:
 
 ## Acknowledgments
 
-I'm greatly indebted to the [Gorilla Websocket Toolkit](https://github.com/gorilla/websocket/tree/master/examples/chat), portions of which have been adapted here for use with Server-Sent Events.
+I'm greatly indebted to the [Gorilla Websocket Toolkit](https://github.com/gorilla/websocket/tree/master/examples/chat) ("GWT"), portions of which have been adapted here for use with Server-Sent Events. GWT code is released under a BSD-style license that applies to GWT code only. (The remainder of this project, except where specified, is Apache 2.0 licensed.)
