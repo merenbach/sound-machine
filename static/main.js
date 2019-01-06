@@ -73,7 +73,7 @@
         applyToHTMLCollection(sounds.getElementsByTagName("audio"), function (el) {
             audioElements[el.dataset.name] = el;
         });
-        
+
         // Assign action to buttons.
         applyToHTMLCollection(sounds.getElementsByClassName("play"), function (el) {
             el.onclick = function (e) {
@@ -86,7 +86,7 @@
                     .catch((error) => console.error(error));
             };
         });
-        
+
         const launch = document.getElementById("launch");
         launch.onclick = function () {
             launch.disabled = true;
