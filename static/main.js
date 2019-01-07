@@ -35,21 +35,21 @@
         }
 
         // NewPlayer creates an HTML5 audio player from the given audio element mapping.
-        function newPlayer(audio, soundMap, trackEndedCallback) {
-            console.log("Creating audio player with elements:", soundMap);
+        function newPlayer(audioElementMap, trackEndedCallback) {
+            console.log("Creating audio player with elements:", audioElementMap);
             const queue = [];
             (function playFromQueue() {
                 setTimeout(function () {
                     if (queue.length == 0) {
                         playFromQueue();
-                        return; gi
+                        return;
                     }
 
                     const sound = queue.shift();
                     console.log("PLAY:", sound);
+                    const audio = audioElementMap[sound];
                     audio.pause();
                     audio.currentTime = 0;
-                    audio.src = soundMap[sound];
                     audio.onplay = () => {
                         console.log("Started playback:", sound)
                     }
@@ -83,12 +83,19 @@
             };
         });
 
+        const audioElementMap = {};
+
         const launch = document.getElementById("launch");
         launch.onclick = function () {
             launch.disabled = true;
-            audioElement.play()
-                .then(() => console.log("Launched app"))
-                .catch((error) => console.error("Error during initial playback:", error));
+
+            // Create central audio-name-to-element map.
+            applyToHTMLCollection(sounds.getElementsByTagName("audio"), function (el) {
+                audioElementMap[el.dataset.name] = el;
+                // Fail silently. We're prewarming and will be aborting, at least with present implementation.
+                el.play()
+                    .catch(() => {});
+            });
 
             applyToHTMLCollection(soundsElement.getElementsByClassName("play"), function (el) {
                 el.disabled = false;
@@ -106,7 +113,13 @@
                 })
                 .catch((e) => console.error(e))
                 .then((obj) => {
-                    const play = newPlayer(audioElement, obj, () => playlistElement.children[0].remove());
+
+                    // Create central audio-name-to-element map.
+                    applyToHTMLCollection(sounds.getElementsByTagName("audio"), function (el) {
+                        el.pause();
+                        el.currentTime = 0;
+                        el.src = obj[el.dataset.name];
+                    });
 
                     const source = newEventSource("/listen");
                     source.addEventListener("message", function (e) {
@@ -119,6 +132,8 @@
                         play(e.data);
                     });
                 });
+
+            const play = newPlayer(audioElementMap, () => playlistElement.children[0].remove());
 
             /*source.onmessage = function(e) {
               console.log("RECV: " + e.data);

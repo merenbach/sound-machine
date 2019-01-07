@@ -13,10 +13,10 @@
   </div>
 </div>
 <div class="container">
-  <audio id="player" preload="auto">Your browser does not support the <code>audio</code> element.</audio>
   <div id="sounds">
     {{range $k, $v := .Sounds}}
     <button class="btn btn-light mb-2 play" data-sound="{{$k}}" disabled>{{$k}}</button>
+    <audio preload="metadata" data-name="{{$k}}">Your browser does not support the <code>audio</code> element.</audio>
     {{end}}
   </div>
   <h2>Playlist</h2>
