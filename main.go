@@ -24,6 +24,7 @@ package main
 // TODO: Ensure any necessary goroutine cleanup/waiting is performed.
 // TODO: Add "release the kracken" sound
 // TODO: Should we be creating sound/button elements in JS to dogfood the /sounds endpoint?
+// TODO: use strings, not bytes, in client/hub; can we even eliminate need for hub?
 
 import (
 	"encoding/json"
