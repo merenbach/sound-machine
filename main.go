@@ -25,6 +25,7 @@ package main
 // TODO: Add "release the kracken" sound
 // TODO: Should we be creating sound/button elements in JS to dogfood the /sounds endpoint?
 // TODO: use strings, not bytes, in client/hub; can we even eliminate need for hub?
+// TODO: make client.send a string channel with size 0? 1? close when it's not draining? should it be the maximum number of clients?
 
 import (
 	"encoding/json"
