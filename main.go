@@ -16,15 +16,14 @@ package main
 
 // TODO: emoji responses? handles for participants?
 // TODO: revamp fault tolerance (invalid sound, etc.)
-// TODO: better log/history display in browser, plus status messages about joins/leaves--and don't try to play those...
+// TODO: better playlist display in browser
 // TODO: different rooms, namespaced to allow multiple "conversations"
 // TODO: Slack integration
 // TODO: dedicated client app to submit?
-// NOTE: portions based heavily on https://github.com/gorilla/websocket/tree/master/examples/chat
 // TODO: allow refreshing of list if remote manifest updated??
-// TODO: remove trailing /ws if we can switch to Heroku for POC
 // TODO: Ensure any necessary goroutine cleanup/waiting is performed.
 // TODO: Add "release the kracken" sound
+// TODO: Should we be creating sound/button elements in JS to dogfood the /sounds endpoint?
 
 import (
 	"encoding/json"
@@ -68,24 +67,6 @@ func main() {
 
 	sounds := loadStringMap("sounds.json")
 	log.Println("Loading sounds:", sounds)
-	//playlist := make(chan string, 100)
-	//defer close(playlist)
-
-	/*currentSound := ""
-	go func() {
-		select {
-		case ch := <-playlist:
-			// new sound, and if we're here we're ready
-			currentSound = ch
-			time.Sleep(1 * time.Second)
-		default:
-			time.Sleep(5 * time.Second)
-		}
-		time.Sleep(1 * time.Second)
-	}()*/
-	/*go func(r chan<- string, s <-chan string) {
-
-	}(queueSicle, drainSicle)*/
 
 	router.GET("/sounds", func(c *gin.Context) {
 		c.JSON(http.StatusOK, sounds)

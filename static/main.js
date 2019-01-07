@@ -35,7 +35,7 @@
         }
 
         // NewPlayer creates an HTML5 audio player from the given audio element mapping.
-        function newPlayer(audioElementMap, trackEndedCallback) {
+        function newPlayer(audioElementMap, trackStartedCallback, trackEndedCallback) {
             console.log("Creating audio player with elements:", audioElementMap);
             const queue = [];
             (function playFromQueue() {
@@ -52,6 +52,7 @@
                     audio.currentTime = 0;
                     audio.onplay = () => {
                         console.log("Started playback:", sound)
+                        trackStartedCallback();
                     }
                     audio.onended = () => {
                         console.log("Finished playback:", sound);
@@ -66,7 +67,6 @@
             return (sound) => queue.push(sound);
         }
 
-        const audioElement = document.getElementById("player");
         const playlistElement = document.getElementById("playlist");
         const soundsElement = document.getElementById("sounds");
 
@@ -126,6 +126,7 @@
                         console.log("RECV:", e.data);
 
                         var newElement = document.createElement("li");
+                        newElement.className = "list-group-item";
                         newElement.textContent = e.data;
                         playlistElement.appendChild(newElement);
 
@@ -133,7 +134,7 @@
                     });
                 });
 
-            const play = newPlayer(audioElementMap, () => playlistElement.children[0].remove());
+            const play = newPlayer(audioElementMap, () => playlistElement.children[0].classList.add("active"), () => playlistElement.children[0].remove());
 
             /*source.onmessage = function(e) {
               console.log("RECV: " + e.data);
