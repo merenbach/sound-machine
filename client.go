@@ -1,6 +1,16 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2018 Andrew Merenbach
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package main
 
@@ -14,45 +24,26 @@ import (
 type Client struct {
 	hub *Hub
 
-	// The websocket connection.
-	context *gin.Context
+	// The server-sent event name.
+	event string
 
 	// Buffered channel of outbound messages.
 	send chan []byte
 }
 
-// writePump pumps messages from the hub to the websocket connection.
-//
-// A goroutine running writePump is started for each connection. The
-// application ensures that there is at most one writer to a connection by
-// executing all writes from this goroutine.
-func (c *Client) writePump() {
-	c.context.Stream(func(w io.Writer) bool {
-		select {
-		case message, ok := <-c.send:
-			if !ok {
-				return false
-			}
-			c.context.SSEvent("message", string(message))
-
-			// TODO: is this necessary with SSE?
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				c.context.SSEvent("message", string(<-c.send))
-			}
-			return true
-		}
-	})
-}
-
 // registerClient handles SSE intitiation requests from the peer.
 func registerClient(hub *Hub, c *gin.Context) {
-	client := &Client{hub: hub, context: c, send: make(chan []byte, 256)}
+	client := &Client{hub: hub, event: "message", send: make(chan []byte, 256)}
 	client.hub.register <- client
 	defer func() {
 		client.hub.unregister <- client
 	}()
 
-	client.writePump()
+	c.Stream(func(w io.Writer) bool {
+		if message, ok := <-client.send; ok {
+			c.SSEvent(client.event, string(message))
+			return true
+		}
+		return false
+	})
 }
