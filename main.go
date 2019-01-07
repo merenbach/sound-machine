@@ -83,7 +83,7 @@ func main() {
 			c.String(http.StatusNotFound, "")
 		}
 	})
-	router.GET("/listen", func(c *gin.Context) {
+	router.GET("/play", func(c *gin.Context) {
 		registerClient(hub, c)
 	})
 	router.GET("/ping", func(c *gin.Context) {

@@ -121,7 +121,7 @@
                         el.src = obj[el.dataset.name];
                     });
 
-                    const source = newEventSource("/listen");
+                    const source = newEventSource("/play");
                     source.addEventListener("message", function (e) {
                         console.log("RECV:", e.data);
 
