@@ -35,44 +35,41 @@
         }
 
         // NewPlayer creates an HTML5 audio player from the given audio element mapping.
-        function newPlayer(audioMap, trackEndedCallback) {
-            console.log("Creating audio player with elements:", audioMap);
+        function newPlayer(audio, soundMap, trackEndedCallback) {
+            console.log("Creating audio player with elements:", soundMap);
             const queue = [];
             (function playFromQueue() {
                 setTimeout(function () {
                     if (queue.length == 0) {
                         playFromQueue();
-                        return;
+                        return; gi
                     }
 
                     const sound = queue.shift();
                     console.log("PLAY:", sound);
-                    const audio = audioMap[sound];
-                    // audio.onplay = () => currentTrack = audio;
+                    audio.src = soundMap[sound];
+                    audio.onplay = () => {
+                        console.log("Started playback:", sound)
+                    }
                     audio.onended = () => {
                         console.log("Finished playback:", sound);
                         playFromQueue();
                         trackEndedCallback();
                     }
                     audio.play()
-                        .then(() => console.log("Started playback:", sound))
+                        //.then(() => console.log("Started playback:", sound))
                         .catch((error) => console.error("Error during playback:", error));
                 }, 100);
             }());
             return (sound) => queue.push(sound);
         }
 
-        const audioElements = {};
-
-        const sounds = document.getElementById("sounds");
-
-        // Create central audio-name-to-element map.
-        applyToHTMLCollection(sounds.getElementsByTagName("audio"), function (el) {
-            audioElements[el.dataset.name] = el;
-        });
+        const audioElement = document.getElementById("player");
+        const playlistElement = document.getElementById("playlist");
+        const soundsElement = document.getElementById("sounds");
 
         // Assign action to buttons.
-        applyToHTMLCollection(sounds.getElementsByClassName("play"), function (el) {
+        applyToHTMLCollection(soundsElement.getElementsByClassName("play"), function (el) {
             el.onclick = function (e) {
                 e.preventDefault();
                 const sound = el.dataset.sound;
@@ -87,24 +84,39 @@
         const launch = document.getElementById("launch");
         launch.onclick = function () {
             launch.disabled = true;
+            audioElement.play()
+                .then(() => console.log("Launched app"))
+                .catch((error) => console.error("Error during initial playback:", error));
 
-            applyToHTMLCollection(sounds.getElementsByClassName("play"), function (el) {
+            applyToHTMLCollection(soundsElement.getElementsByClassName("play"), function (el) {
                 el.disabled = false;
             });
 
-            const playlistElement = document.getElementById("playlist");
-            const play = newPlayer(audioElements, () => playlistElement.children[0].remove());
+            fetch('/sounds')
+                .catch(function (e) {
+                    console.error(e);
+                })
+                .then((response) => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error(response.statusText);
+                })
+                .catch((e) => console.error(e))
+                .then((obj) => {
+                    const play = newPlayer(audioElement, obj, () => playlistElement.children[0].remove());
 
-            const source = newEventSource("/listen");
-            source.addEventListener("message", function (e) {
-                console.log("RECV:", e.data);
+                    const source = newEventSource("/listen");
+                    source.addEventListener("message", function (e) {
+                        console.log("RECV:", e.data);
 
-                var newElement = document.createElement("li");
-                newElement.textContent = e.data;
-                playlistElement.appendChild(newElement);
+                        var newElement = document.createElement("li");
+                        newElement.textContent = e.data;
+                        playlistElement.appendChild(newElement);
 
-                play(e.data);
-            });
+                        play(e.data);
+                    });
+                });
 
             /*source.onmessage = function(e) {
               console.log("RECV: " + e.data);
