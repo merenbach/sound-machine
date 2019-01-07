@@ -47,6 +47,8 @@
 
                     const sound = queue.shift();
                     console.log("PLAY:", sound);
+                    audio.pause();
+                    audio.currentTime = 0;
                     audio.src = soundMap[sound];
                     audio.onplay = () => {
                         console.log("Started playback:", sound)
