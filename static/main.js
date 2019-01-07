@@ -45,25 +45,22 @@
                         return;
                     }
 
-                    const next = queue.shift();
-                    console.log("PLAY:", next);
-                    const audio = audioMap[next];
+                    const sound = queue.shift();
+                    console.log("PLAY:", sound);
+                    const audio = audioMap[sound];
                     // audio.onplay = () => currentTrack = audio;
                     audio.onended = () => {
+                        console.log("Finished playback:", sound);
                         playFromQueue();
                         trackEndedCallback();
                     }
-                    audio.play();
+                    audio.play()
+                        .then(() => console.log("Started playback:", sound))
+                        .catch((error) => console.error("Error during playback:", error));
                 }, 100);
             }());
             return (sound) => queue.push(sound);
         }
-
-        /*source.onmessage = function(e) {
-          console.log("RECV: " + e.data);
-          document.getElementById('charlie').innerHTML += e.data + '<br>';
-        };*/
-        // source.close();
 
         const audioElements = {};
 
