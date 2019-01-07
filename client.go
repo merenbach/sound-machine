@@ -50,6 +50,9 @@ func (c *Client) writePump() {
 func registerClient(hub *Hub, c *gin.Context) {
 	client := &Client{hub: hub, context: c, send: make(chan []byte, 256)}
 	client.hub.register <- client
+	defer func() {
+		client.hub.unregister <- client
+	}()
 
 	client.writePump()
 }
