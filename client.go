@@ -29,6 +29,16 @@ type Client struct {
 	send chan string
 }
 
+// Send to the client, returning whether the operation was successful.
+func (c *Client) Send(s string) bool {
+	select {
+	case c.send <- s:
+		return true
+	default:
+		return false
+	}
+}
+
 // registerClient handles SSE intitiation requests from the peer.
 func registerClient(hub *Hub, c *gin.Context) {
 	client := &Client{event: "message", send: make(chan string, 256)}
