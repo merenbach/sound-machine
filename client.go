@@ -26,18 +26,18 @@ type Client struct {
 	event string
 
 	// Buffered channel of outbound messages.
-	send chan []byte
+	send chan string
 }
 
 // registerClient handles SSE intitiation requests from the peer.
 func registerClient(hub *Hub, c *gin.Context) {
-	client := &Client{event: "message", send: make(chan []byte, 256)}
+	client := &Client{event: "message", send: make(chan string, 256)}
 	hub.Register(client)
 	defer hub.Unregister(client)
 
 	c.Stream(func(w io.Writer) bool {
 		if message, ok := <-client.send; ok {
-			c.SSEvent(client.event, string(message))
+			c.SSEvent(client.event, message)
 			return true
 		}
 		return false

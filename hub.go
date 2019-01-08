@@ -11,7 +11,7 @@ type Hub struct {
 	clients map[*Client]struct{}
 
 	// Inbound messages from the clients.
-	broadcast chan []byte
+	broadcast chan string
 
 	// Register requests from the clients.
 	register chan *Client
@@ -22,7 +22,7 @@ type Hub struct {
 
 func newHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte),
+		broadcast:  make(chan string),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]struct{}),
@@ -40,8 +40,8 @@ func (h *Hub) Unregister(c *Client) {
 }
 
 // Broadcast to all clients in the hub.
-func (h *Hub) Broadcast(bb []byte) {
-	h.broadcast <- bb
+func (h *Hub) Broadcast(s string) {
+	h.broadcast <- s
 }
 
 func (h *Hub) run() {
