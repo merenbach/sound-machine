@@ -22,8 +22,6 @@ import (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub *Hub
-
 	// The server-sent event name.
 	event string
 
@@ -33,11 +31,9 @@ type Client struct {
 
 // registerClient handles SSE intitiation requests from the peer.
 func registerClient(hub *Hub, c *gin.Context) {
-	client := &Client{hub: hub, event: "message", send: make(chan []byte, 256)}
-	client.hub.register <- client
-	defer func() {
-		client.hub.unregister <- client
-	}()
+	client := &Client{event: "message", send: make(chan []byte, 256)}
+	hub.Register(client)
+	defer hub.Unregister(client)
 
 	c.Stream(func(w io.Writer) bool {
 		if message, ok := <-client.send; ok {

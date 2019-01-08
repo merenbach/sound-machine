@@ -29,6 +29,21 @@ func newHub() *Hub {
 	}
 }
 
+// Register a client with the hub.
+func (h *Hub) Register(c *Client) {
+	h.register <- c
+}
+
+// Unregister a client from the hub.
+func (h *Hub) Unregister(c *Client) {
+	h.unregister <- c
+}
+
+// Broadcast to all clients in the hub.
+func (h *Hub) Broadcast(bb []byte) {
+	h.broadcast <- bb
+}
+
 func (h *Hub) run() {
 	for {
 		select {

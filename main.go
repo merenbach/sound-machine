@@ -78,7 +78,7 @@ func main() {
 		log.Println("Received:", sound)
 		if _, ok := sounds[sound]; ok {
 			log.Println("Adding sound to queue:", sound)
-			hub.broadcast <- []byte(sound)
+			hub.Broadcast([]byte(sound))
 			c.String(http.StatusOK, "")
 		} else {
 			log.Println("Ignoring unknown sound:", sound)
