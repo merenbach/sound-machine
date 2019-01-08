@@ -31,6 +31,7 @@
             var eventSource = new EventSource(urlPath);
             eventSource.onopen = () => console.log("EventSource connection to server opened:", urlPath);
             eventSource.onerror = () => console.error("EventSource failed:", urlPath);
+            eventSource.onmessage = (e) => console.log("INFO:", e.data);
             return eventSource;
         }
 
@@ -122,7 +123,7 @@
                     });
 
                     const source = newEventSource("/play");
-                    source.addEventListener("message", function (e) {
+                    source.addEventListener("play", function (e) {
                         console.log("RECV:", e.data);
 
                         var newElement = document.createElement("li");
