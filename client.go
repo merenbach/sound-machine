@@ -14,12 +14,6 @@
 
 package main
 
-import (
-	"io"
-
-	"github.com/gin-gonic/gin"
-)
-
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	// The server-sent event name.
@@ -44,17 +38,9 @@ func (c *Client) Halt() {
 	close(c.send)
 }
 
-// registerClient handles SSE intitiation requests from the peer.
-func registerClient(hub *Hub, c *gin.Context) {
-	client := &Client{event: "message", send: make(chan string, 256)}
-	hub.Register(client)
-	defer hub.Unregister(client)
-
-	c.Stream(func(w io.Writer) bool {
-		if message, ok := <-client.send; ok {
-			c.SSEvent(client.event, message)
-			return true
-		}
-		return false
-	})
+func newClient(e string) *Client {
+	return &Client{
+		event: e,
+		send:  make(chan string, 256),
+	}
 }

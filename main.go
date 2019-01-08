@@ -26,9 +26,11 @@ package main
 // TODO: Should we be creating sound/button elements in JS to dogfood the /sounds endpoint?
 // TODO: use strings, not bytes, in client/hub; can we even eliminate need for hub?
 // TODO: make client.send a string channel with size 0? 1? close when it's not draining? should it be the maximum number of clients?
+// TODO: if centralizing broadcasting, can we allow specification of an event _and_ data, maybe with a custom message struct?
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -86,7 +88,25 @@ func main() {
 		}
 	})
 	router.GET("/play", func(c *gin.Context) {
-		registerClient(hub, c)
+		client := newClient("message")
+		hub.Register(client)
+		defer hub.Unregister(client)
+		c.Stream(func(w io.Writer) bool {
+			// return client.read(func(s string) {
+			// 	c.SSEvent(client.event, s)
+			// })
+			if message, ok := <-client.send; ok {
+				c.SSEvent(client.event, message)
+				// // Add queued chat messages to the current websocket message. (TODO: does this apply to SSE?)
+				// n := len(c.send)
+				// for i := 0; i < n; i++ {
+				// 	w.Write(newline)
+				// 	w.Write(<-c.send)
+				// }
+				return true
+			}
+			return false
+		})
 	})
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
