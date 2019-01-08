@@ -39,6 +39,11 @@ func (c *Client) Send(s string) bool {
 	}
 }
 
+// Halt further communications to this client by closing its send channel.
+func (c *Client) Halt() {
+	close(c.send)
+}
+
 // registerClient handles SSE intitiation requests from the peer.
 func registerClient(hub *Hub, c *gin.Context) {
 	client := &Client{event: "message", send: make(chan string, 256)}

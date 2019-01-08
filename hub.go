@@ -52,12 +52,12 @@ func (h *Hub) run() {
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
-				close(client.send)
+				client.Halt()
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
 				if !client.Send(message) {
-					close(client.send)
+					client.Halt()
 					delete(h.clients, client)
 				}
 			}
