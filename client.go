@@ -20,7 +20,6 @@ package main
 
 import (
 	"io"
-	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -42,9 +41,6 @@ const (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	// The server-sent event name.
-	event string
-
 	// Buffered channel of outbound messages.
 	send chan string
 }
@@ -66,51 +62,25 @@ func (c *Client) Halt() {
 
 func (c *Client) writePump(ctx *gin.Context) {
 	ticker := time.NewTicker(pingPeriod)
-	defer func() {
-		ticker.Stop()
-		// c.conn.Close()
-	}()
+	defer ticker.Stop()
 	ctx.Stream(func(w io.Writer) bool {
 		select {
 		case message, ok := <-c.send:
-			// c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
-				// c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return false
 			}
 
-			/*w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return false
-			}*/
-			ctx.SSEvent(c.event, message)
-
-			// Add queued chat messages to the current websocket message.
-			/*n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				ctx.SSEvent(c.event, <-c.send)
-			}*/
-
-			/*if err := w.Close(); err != nil {
-				return false
-			}*/
+			ctx.SSEvent("message", message)
 		case <-ticker.C:
-			log.Println("Keeping alive")
-			ctx.SSEvent("", "Keep alive")
-			//c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			/*if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return false
-			}*/
+			ctx.SSEvent("heartbeat", time.Now().Unix())
 		}
 		return true
 	})
 }
 
-func newClient(e string) *Client {
+func newClient() *Client {
 	return &Client{
-		event: e,
-		send:  make(chan string, 256),
+		send: make(chan string, 256),
 	}
 }

@@ -88,7 +88,7 @@ func main() {
 		}
 	})
 	router.GET("/play", func(c *gin.Context) {
-		client := newClient("play")
+		client := newClient()
 		hub.Register(client)
 		defer hub.Unregister(client)
 		client.writePump(c)
