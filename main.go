@@ -26,6 +26,8 @@ package main
 // TODO: Should we be creating sound/button elements in JS to dogfood the /sounds endpoint?
 // TODO: use strings, not bytes, in client/hub; can we even eliminate need for hub?
 // TODO: make client.send a string channel with size 0? 1? close when it's not draining? should it be the maximum number of clients?
+// TODO: if centralizing broadcasting, can we allow specification of an event _and_ data, maybe with a custom message struct?
+// TODO: IMPORTANT: explore client-to-server heartbeats to keep client registered
 
 import (
 	"encoding/json"
@@ -78,7 +80,7 @@ func main() {
 		log.Println("Received:", sound)
 		if _, ok := sounds[sound]; ok {
 			log.Println("Adding sound to queue:", sound)
-			hub.broadcast <- []byte(sound)
+			hub.Broadcast(sound)
 			c.String(http.StatusOK, "")
 		} else {
 			log.Println("Ignoring unknown sound:", sound)
@@ -86,7 +88,10 @@ func main() {
 		}
 	})
 	router.GET("/play", func(c *gin.Context) {
-		registerClient(hub, c)
+		client := newClient()
+		hub.Register(client)
+		defer hub.Unregister(client)
+		client.writePump(c)
 	})
 	router.GET("/ping", func(c *gin.Context) {
 		c.String(200, "pong")

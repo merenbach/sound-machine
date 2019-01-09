@@ -31,13 +31,14 @@
             var eventSource = new EventSource(urlPath);
             eventSource.onopen = () => console.log("EventSource connection to server opened:", urlPath);
             eventSource.onerror = () => console.error("EventSource failed:", urlPath);
+            // eventSource.onmessage = (e) => console.log("INFO:", e.data);
             return eventSource;
         }
 
         // NewPlayer creates an HTML5 audio player from the given audio element mapping.
         function newPlayer(audioElementMap, trackStartedCallback, trackEndedCallback) {
             console.log("Creating audio player with elements:", audioElementMap);
-            const queue = [];
+            const queue = new Array();
             (function playFromQueue() {
                 setTimeout(function () {
                     if (queue.length == 0) {
@@ -46,16 +47,20 @@
                     }
 
                     const sound = queue.shift();
-                    console.log("PLAY:", sound);
-                    const audio = audioElementMap[sound];
+                    console.log("NEXT:", sound);
+                    if (!audioElementMap.has(sound)) {
+                        console.log("Invalid sound made it into the queue:", sound);
+                        return;
+                    }
+                    const audio = audioElementMap.get(sound);
                     audio.pause();
                     audio.currentTime = 0;
                     audio.onplay = () => {
-                        console.log("Started playback:", sound)
+                        console.log("PLAY:", sound)
                         trackStartedCallback();
                     }
                     audio.onended = () => {
-                        console.log("Finished playback:", sound);
+                        console.log("DONE:", sound);
                         playFromQueue();
                         trackEndedCallback();
                     }
@@ -83,7 +88,7 @@
             };
         });
 
-        const audioElementMap = {};
+        const audioElementMap = new Map();
 
         const launch = document.getElementById("launch");
         launch.onclick = function () {
@@ -91,7 +96,7 @@
 
             // Create central audio-name-to-element map.
             applyToHTMLCollection(sounds.getElementsByTagName("audio"), function (el) {
-                audioElementMap[el.dataset.name] = el;
+                audioElementMap.set(el.dataset.name, el);
                 // Fail silently. We're prewarming and will be aborting, at least with present implementation.
                 el.play()
                     .catch(() => {});
@@ -131,6 +136,9 @@
                         playlistElement.appendChild(newElement);
 
                         play(e.data);
+                    });
+                    source.addEventListener("heartbeat", function (e) {
+                        console.debug("BEAT:", e.data);
                     });
                 });
 

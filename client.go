@@ -12,38 +12,75 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Portions copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package main
 
 import (
 	"io"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	// Time allowed to write a message to the peer.
+	// writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 60 * time.Second
+
+	// Send pings to peer with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+
+	// Maximum message size allowed from peer.
+	// maxMessageSize = 512
+)
+
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub *Hub
-
-	// The server-sent event name.
-	event string
-
 	// Buffered channel of outbound messages.
-	send chan []byte
+	send chan string
 }
 
-// registerClient handles SSE intitiation requests from the peer.
-func registerClient(hub *Hub, c *gin.Context) {
-	client := &Client{hub: hub, event: "message", send: make(chan []byte, 256)}
-	client.hub.register <- client
-	defer func() {
-		client.hub.unregister <- client
-	}()
-
-	c.Stream(func(w io.Writer) bool {
-		if message, ok := <-client.send; ok {
-			c.SSEvent(client.event, string(message))
-			return true
-		}
+// Send to the client, returning whether the operation was successful.
+func (c *Client) Send(s string) bool {
+	select {
+	case c.send <- s:
+		return true
+	default:
 		return false
+	}
+}
+
+// Halt further communications to this client by closing its send channel.
+func (c *Client) Halt() {
+	close(c.send)
+}
+
+func (c *Client) writePump(ctx *gin.Context) {
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
+	ctx.Stream(func(w io.Writer) bool {
+		select {
+		case message, ok := <-c.send:
+			if !ok {
+				// The hub closed the channel.
+				return false
+			}
+
+			ctx.SSEvent("message", message)
+		case <-ticker.C:
+			ctx.SSEvent("heartbeat", time.Now().Unix())
+		}
+		return true
 	})
+}
+
+func newClient() *Client {
+	return &Client{
+		send: make(chan string, 256),
+	}
 }
