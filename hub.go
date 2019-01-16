@@ -59,20 +59,24 @@ func (h *Hub) Broadcast(s string) {
 }
 
 func (h *Hub) run() {
+	remove := func(c *Client) {
+		c.Halt()
+		delete(h.clients, c)
+	}
 	for {
 		select {
 		case client := <-h.register:
 			h.clients[client] = struct{}{}
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				client.Halt()
+				// The client closed the connection
+				remove(client)
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
 				if !client.Send(message) {
-					client.Halt()
-					delete(h.clients, client)
+					// The client send buffer was full.
+					remove(client)
 				}
 			}
 		}
