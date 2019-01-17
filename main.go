@@ -31,10 +31,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
@@ -73,11 +75,13 @@ func main() {
 	log.Println("Loading sounds:", sounds)
 
 	router.GET("/sounds", func(c *gin.Context) {
+		// TODO: potential race condition?
 		c.JSON(http.StatusOK, sounds)
 	})
 	router.POST("/play/:sound", func(c *gin.Context) {
 		sound := c.Param("sound")
 		log.Println("Received:", sound)
+		// TODO: potential race condition?
 		if _, ok := sounds[sound]; ok {
 			log.Println("Adding sound to queue:", sound)
 			hub.Broadcast(sound)
@@ -93,10 +97,78 @@ func main() {
 		defer hub.Unregister(client)
 		client.writePump(c)
 	})
+	SLACK_TOKEN := "hello"
+	router.POST("/slack", func(c *gin.Context) {
+		type SlackSlashCommand struct {
+			Command     string `json:"command"`
+			Text        string `json:"text"`
+			UserName    string `json:"user_name"`
+			ChannelName string `json:"channel_name"`
+			Token       string `json:"token"`
+		}
+		var slashCommand SlackSlashCommand
+		err := c.BindJSON(&slashCommand)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error: ", err.Error())
+		}
+
+		if token := slashCommand.Token; token == "" || token != SLACK_TOKEN {
+			log.Println("Missing or invalid token: ", token, c.Request.PostForm)
+			c.String(http.StatusUnauthorized, "")
+			return
+		}
+
+		log.Println(slashCommand)
+
+		// if command == '/play':
+		// 	d['text'] = text.lower()
+		// TODO: potential race condition?
+		sound := strings.TrimSpace(slashCommand.Text)
+		if _, ok := sounds[sound]; ok {
+			hub.Broadcast(sound)
+		} else {
+			log.Println("Could not find a command")
+			// TODO: potential race condition?
+			c.JSON(http.StatusNotFound, "hello")
+			return
+		}
+
+		// 	p = playlist()
+		// 	# /play, /play nonsensaoeuthaeounthaeou, /play aoeu etuitituiti, etc.
+		// 	if text not in p:
+		// 		return '\n'.join(p)
+		// elif command == '/say':
+		// 	if not text:
+		// 		return 'USAGE: /say [something]'
+		// 	d['text'] = text
+		// @lru_cache()
+		// def response_type_for_channel(channel):
+		// 	valid_channels = ['privategroup', 'directmessage']
+		// 	valid_channels.extend(current_app.config['SLACK_CHANNELS'].split(','))
+		// 	return 'in_channel' if channel in valid_channels else 'ephemeral'
+		msg := fmt.Sprint(":speaker:", sound)
+		respType := "in_channel"
+		// resp_type = response_type_for_channel(channel_name)
+		TXT_REPLIES := map[string]string{
+			"56k": "56k response",
+		}
+		if slashCommand.Command == "/play" {
+			if txtReply, ok := TXT_REPLIES[sound]; ok {
+				// # [TODO] use 'pretext' instead?
+				msg = fmt.Sprint(":speaker:", txtReply)
+			} else {
+				c.String(http.StatusOK, "")
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{"response_type": respType, "text": msg})
+		}
+	})
 	router.GET("/ping", func(c *gin.Context) {
-		c.String(200, "pong")
+		c.String(http.StatusOK, "pong")
 	})
 
+	// TODO: potential race condition?
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl.html", struct {
 			Sounds map[string]string
