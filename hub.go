@@ -18,6 +18,8 @@
 
 package main
 
+import "log"
+
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -65,14 +67,23 @@ func (h *Hub) run() {
 	}
 	for {
 		select {
-		case client := <-h.register:
+		case client, ok := <-h.register:
+			if !ok {
+				log.Fatalln("Register channel closed unexpectedly")
+			}
 			h.clients[client] = struct{}{}
-		case client := <-h.unregister:
+		case client, ok := <-h.unregister:
+			if !ok {
+				log.Fatalln("Register channel closed unexpectedly")
+			}
 			if _, ok := h.clients[client]; ok {
 				// The client closed the connection
 				remove(client)
 			}
-		case message := <-h.broadcast:
+		case message, ok := <-h.broadcast:
+			if !ok {
+				log.Fatalln("Broadcaste channel closed unexpectedly")
+			}
 			for client := range h.clients {
 				if !client.Send(message) {
 					// The client send buffer was full.
